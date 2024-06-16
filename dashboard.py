@@ -14,6 +14,7 @@ except Exception as e:
     print(f"Ошибка при загрузке данных: {e}")
     raise
 
+
 # Проверка наличия всех необходимых столбцов
 required_columns = ['Date and time', 'ghi', 'dni', 'dhi']
 for column in required_columns:
