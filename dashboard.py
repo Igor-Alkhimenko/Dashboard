@@ -7,12 +7,9 @@ import plotly.express as px
 from dash.dash_table.Format import Group
 import plotly.graph_objects as go
 
-
-
-
 # Загрузка и обработка данных
 try:
-    df = pd.read_csv(r'C:\Users\Admin\Desktop\RPO_2_semmestr\dashbord\pythonProject\data.csv', sep=';')
+    df = pd.read_csv(r'C:\Users\Admin\Desktop\RPO_2_semmestr\dashbord\pythonProject\data.csv', sep=';', parse_dates=['Date and time'], date_format="%Y-%m-%dT%H:%M:%S%z")
 except Exception as e:
     print(f"Ошибка при загрузке данных: {e}")
     raise
@@ -39,74 +36,87 @@ app.layout = html.Div([
         start_date=df['Date and time'].min(),
         end_date=df['Date and time'].max()
     ),
+    dcc.Dropdown(
+        id='analysis-parameter-dropdown',
+        options=[
+            {'label': 'GHI', 'value': 'ghi'},
+            {'label': 'DNI', 'value': 'dni'},
+            {'label': 'DHI', 'value': 'dhi'}
+        ],
+        placeholder="Выберите параметр анализа"
+    ),
     dcc.Graph(id='line-graph'),
     dcc.Graph(id='bar-graph'),  # Столбчатая диаграмма
     dcc.Graph(id='histogram-graph'),  # Гистограмма
 ])
 
-
 @app.callback(
     Output('line-graph', 'figure'),
     [Input('date-picker', 'start_date'),
-     Input('date-picker', 'end_date')]
+     Input('date-picker', 'end_date'),
+     Input('analysis-parameter-dropdown', 'value')]
 )
-def update_line_graph(start_date, end_date):
+def update_line_graph(start_date, end_date, parameter):
     try:
         filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
     except Exception as e:
         print(f"Ошибка при фильтрации данных: {e}")
         return go.Figure()
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=filtered_df['Date and time'], y=filtered_df['ghi'], mode='lines', name='GHI'))
-    fig.add_trace(go.Scatter(x=filtered_df['Date and time'], y=filtered_df['dni'], mode='lines', name='DNI'))
-    fig.add_trace(go.Scatter(x=filtered_df['Date and time'], y=filtered_df['dhi'], mode='lines', name='DHI'))
-    fig.update_layout(title='Линейный график солнечной радиации', xaxis_title='Дата и время', yaxis_title='Мощность')
-    return fig
+    if parameter:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=filtered_df['Date and time'], y=filtered_df[parameter], mode='lines', name=parameter))
+        fig.update_layout(title=f'Линейный график {parameter}', xaxis_title='Дата и время', yaxis_title='Мощность')
+        return fig
+    else:
+        return go.Figure()
 
 
 @app.callback(
     Output('bar-graph', 'figure'),
     [Input('date-picker', 'start_date'),
-     Input('date-picker', 'end_date')]
+     Input('date-picker', 'end_date'),
+     Input('analysis-parameter-dropdown', 'value')]
 )
-def update_bar_graph(start_date, end_date):
-    try:
-        filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
-
-        # Проверка на наличие данных для агрегации
-        if len(filtered_df) == 0:
-            print("Нет данных для агрегации.")
-            return go.Figure()
-
-        # Пример агрегации по дням
-        daily_radiation = filtered_df.groupby(filtered_df['Date and time'].dt.date)['ghi'].sum()  # Группировка по дате
-
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=daily_radiation.index, y=daily_radiation.values, name='Горячая точка'))
-        fig.update_layout(title='Столбчатая диаграмма солнечной радиации по дням', xaxis_title='Дата',
-                          yaxis_title='Суммарная мощность GHI')
-        return fig
-    except Exception as e:
-        print(f"Ошибка при создании столбчатой диаграммы: {e}")
-        return go.Figure()
-
-    #создание гистограммы
-@app.callback(
-    Output('histogram-graph', 'figure'),
-    [Input('date-picker', 'start_date'),
-     Input('date-picker', 'end_date')]
-)
-def update_histogram_graph(start_date, end_date):
+def update_bar_graph(start_date, end_date, parameter):
     try:
         filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
     except Exception as e:
         print(f"Ошибка при фильтрации данных: {e}")
         return go.Figure()
 
-    fig = px.histogram(filtered_df, x='ghi', nbins=10)
-    fig.update_layout(title='Гистограмма солнечной радиации', xaxis_title='Мощность GHI', yaxis_title='Частота')
-    return fig
+    if parameter:
+        # Пример агрегации по дням для выбранного параметра
+        daily_radiation = filtered_df.groupby(filtered_df['Date and time'].dt.date)[parameter].sum()  # Группировка по дате
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=daily_radiation.index, y=daily_radiation.values, name=parameter))
+        fig.update_layout(title=f'Столбчатая диаграмма {parameter} по дням', xaxis_title='Дата',
+                          yaxis_title='Суммарное значение')
+        return fig
+    else:
+        return go.Figure()
+
+@app.callback(
+    Output('histogram-graph', 'figure'),
+    [Input('date-picker', 'start_date'),
+    Input('date-picker', 'end_date'),
+    Input('analysis-parameter-dropdown', 'value')]
+    )
+def update_histogram_graph(start_date, end_date, parameter):
+    try:
+        filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
+    except Exception as e:
+        print(f"Ошибка при фильтрации данных: {e}")
+        return go.Figure()
+
+    if parameter:
+        fig = px.histogram(filtered_df, x=parameter, nbins=10)
+        fig.update_layout(title=f'Гистограмма {parameter}', xaxis_title=parameter, yaxis_title='Частота')
+        return fig
+    else:
+        return go.Figure()
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
