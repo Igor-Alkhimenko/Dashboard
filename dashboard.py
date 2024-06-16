@@ -48,6 +48,7 @@ app.layout = html.Div([
     dcc.Graph(id='line-graph'),
     dcc.Graph(id='bar-graph'),  # Столбчатая диаграмма
     dcc.Graph(id='histogram-graph'),  # Гистограмма
+    dcc.Graph(id='pie-chart')  # Круговая диаграмма
 ])
 
 @app.callback(
@@ -113,6 +114,45 @@ def update_histogram_graph(start_date, end_date, parameter):
     if parameter:
         fig = px.histogram(filtered_df, x=parameter, nbins=10)
         fig.update_layout(title=f'Гистограмма {parameter}', xaxis_title=parameter, yaxis_title='Частота')
+        return fig
+    else:
+        return go.Figure()
+
+
+@app.callback(
+    Output('pie-chart', 'figure'),
+    [Input('date-picker', 'start_date'),
+     Input('date-picker', 'end_date'),
+     Input('analysis-parameter-dropdown', 'value')]
+)
+def update_pie_chart(start_date, end_date, parameter):
+    try:
+        filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
+    except Exception as e:
+        print(f"Ошибка при фильтрации данных: {e}")
+        return go.Figure()
+
+    if parameter:
+        total_values = {
+            'ghi': filtered_df['ghi'].sum(),
+            'dni': filtered_df['dni'].sum(),
+            'dhi': filtered_df['dhi'].sum()
+        }
+        selected_value = total_values.pop(parameter)
+
+        # Вычисляем общую сумму остальных параметров
+        other_values_sum = sum(value for value in total_values.values())
+
+        # Вычисляем процентное соотношение выбранного параметра к сумме остальных
+        percentage_of_selected = (selected_value / other_values_sum) * 100
+
+        # Формируем значения для круговой диаграммы
+        values = [percentage_of_selected] + list(total_values.values())
+        names = ['% Выбранного параметра к остальным'] + list(total_values.keys())
+
+        fig = go.Figure(data=[go.Pie(labels=names, values=values, hole=.5)])
+        fig.update_traces(hovertemplate='%{label}<br>%{value} (<i>%{percent}</i>)')  # Добавляем hovertemplate
+        fig.update_layout(title_text='Процентное соотношение выбранного параметра радиации к сумме остальных параметров')
         return fig
     else:
         return go.Figure()
