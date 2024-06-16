@@ -8,6 +8,8 @@ from dash.dash_table.Format import Group
 import plotly.graph_objects as go
 
 
+
+
 # Загрузка и обработка данных
 try:
     df = pd.read_csv(r'C:\Users\Admin\Desktop\RPO_2_semmestr\dashbord\pythonProject\data.csv', sep=';')
@@ -39,6 +41,7 @@ app.layout = html.Div([
     ),
     dcc.Graph(id='line-graph'),
     dcc.Graph(id='bar-graph'),  # Столбчатая диаграмма
+    dcc.Graph(id='histogram-graph'),  # Гистограмма
 ])
 
 
@@ -88,6 +91,22 @@ def update_bar_graph(start_date, end_date):
         print(f"Ошибка при создании столбчатой диаграммы: {e}")
         return go.Figure()
 
+    #создание гистограммы
+@app.callback(
+    Output('histogram-graph', 'figure'),
+    [Input('date-picker', 'start_date'),
+     Input('date-picker', 'end_date')]
+)
+def update_histogram_graph(start_date, end_date):
+    try:
+        filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
+    except Exception as e:
+        print(f"Ошибка при фильтрации данных: {e}")
+        return go.Figure()
+
+    fig = px.histogram(filtered_df, x='ghi', nbins=10)
+    fig.update_layout(title='Гистограмма солнечной радиации', xaxis_title='Мощность GHI', yaxis_title='Частота')
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)
