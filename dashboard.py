@@ -31,6 +31,30 @@ except Exception as e:
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
+dcc.Upload(
+        id='upload-data',
+        children=html.Div(['Перетащите CSV файл сюда или ', html.A('нажмите здесь', style={'display':'inline-block'}), ' для загрузки']),
+        style={
+            'width': '100%',
+            'height': '60px',
+            'lineHeight': '60px',
+            'borderWidth': '1px',
+            'borderStyle': 'dashed',
+            'borderRadius': '5px',
+            'textAlign': 'center',
+            'margin': '10px'
+        },
+        multiple=False
+    ),
+    html.H2("Первые 10 строк исходной таблицы данных для предпросмотра"),
+    dash_table.DataTable(
+        id='preview-table',
+        columns=[{"name": i, "id": i} for i in df.columns],
+        data=df.head(10).to_dict('records'),
+        style_cell={'whiteSpace': 'normal'},
+        style_header={'fontWeight': 'bold'},
+        style_table={'overflowX': 'auto'}
+    ),
     dcc.DatePickerRange(
         id='date-picker',
         start_date=df['Date and time'].min(),
