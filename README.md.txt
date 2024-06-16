@@ -12,6 +12,10 @@
 pip install dash
 pip install pandas
 pip install plotly graph_objects
+pip install plotly-express
+pip install plotly graph_objects
+pip install dash-table
+
 
 2. Запустите приложение, выполнив следующую команду в терминале:
 python dashboard.py
@@ -28,9 +32,17 @@ python dashboard.py
 - Pandas
 - Plotly
 
-## Контакты
+## Основная структура дашборда
 
-Если у вас возникнут вопросы или предложения по улучшению, пожалуйста, свяжитесь с нами по электронной почте: alhimenko12345@inbox.ru
+- линейный граф update_line_graph
+- столбчатая диаграмма update_bar_graph
+- гистограмма update_histogram_graph
+- круговая диаграмма update_pie_chart
+- 3д график update_scatter_3d_plot
+
+
+
+Если у вас возникнут вопросы или предложения по улучшению, пожалуйста, свяжитесь с мной по электронной почте: alhimenko12345@inbox.ru
 
 ---
 
