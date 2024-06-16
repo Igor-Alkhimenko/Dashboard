@@ -48,7 +48,8 @@ app.layout = html.Div([
     dcc.Graph(id='line-graph'),
     dcc.Graph(id='bar-graph'),  # Столбчатая диаграмма
     dcc.Graph(id='histogram-graph'),  # Гистограмма
-    dcc.Graph(id='pie-chart')  # Круговая диаграмма
+    dcc.Graph(id='pie-chart'),  # Круговая диаграмма
+    dcc.Graph(id='scatter-3d')   # 3D scatter plot
 ])
 
 @app.callback(
@@ -157,6 +158,46 @@ def update_pie_chart(start_date, end_date, parameter):
     else:
         return go.Figure()
 
+@app.callback(
+    Output('scatter-3d', 'figure'),
+    [Input('date-picker', 'start_date'),
+     Input('date-picker', 'end_date'),
+     Input('analysis-parameter-dropdown', 'value')]
+)
+def update_scatter_3d_plot(start_date, end_date, parameter):
+    try:
+        filtered_df = df[(df['Date and time'] >= start_date) & (df['Date and time'] <= end_date)]
+    except Exception as e:
+        print(f"Ошибка при фильтрации данных: {e}")
+        return go.Figure()
+
+    if parameter:
+        fig = go.Figure(data=[go.Scatter3d(
+            x=filtered_df['ghi'],
+            y=filtered_df['dni'],
+            z=filtered_df['dhi'],
+            mode='markers',
+            marker=dict(
+                size=8,
+                line=dict(
+                    color='rgba(204, 204, 204, 1.0)',
+                    width=0.5
+                ),
+                opacity=0.8
+            )
+        )])
+        fig.update_layout(
+            scene=dict(
+                xaxis_title='GHI',
+                yaxis_title='DNI',
+                zaxis_title='DHI',
+                aspectratio=dict(x=1, y=1, z=0.7)
+            )
+        )
+        fig.update_layout(title_text='Точечный 3D график - 3D scatter plot ')
+        return fig
+    else:
+        return go.Figure()
 
 if __name__ == '__main__':
     app.run_server(debug=True)
